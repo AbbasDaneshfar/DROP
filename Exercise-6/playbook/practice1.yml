@@ -1,0 +1,36 @@
+---
+- name: first playbook
+  hosts: all
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: update package cache
+      become: yes
+      apt:
+        update_cache: yes
+
+    - name: upgrade system
+      become: yes
+      apt:
+        #   upgrade: full
+
+- hosts: db_servers
+  gather_facts: no
+  tasks:
+  - name: install mysql
+    become: yes
+    apt:
+      name: mysql-server
+      state: present
+
+- hosts: web_servers
+  gather_facts: no
+  tasks:
+    - name: install nginx
+      become: yes
+      apt:
+        name: nginx
+        state: present
+...
+
+
