@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  frontend:
+    depends_on: 
+      - backend
+    build: ./frontend
+    tty: true
+    ports:
+      - 3000:3000
+ #   command: echo "frontend is running"
+    
+
+  backend: 
+    depends_on: 
+      - db
+    build: ./backend
+    tty: true
+    ports: 
+      - 3001:3001
+    environment: 
+      DB_URL: mongodb://db/mydb
+ #   command: echo "backend is running"
+    
+#    command: ./docker-entrypoint.sh
+
+  db:
+    image: mongo:4.0-xenial
+    tty: true
+    ports:
+      - 27017:27017
+    volumes:
+      - data:/data/db
+#    command: echo "Database is running"
+    
+
+volumes:
+  data:
