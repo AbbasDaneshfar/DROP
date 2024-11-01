@@ -1,0 +1,43 @@
+---
+- name: install dependency
+  apt:
+    name: "{{item}}"
+    state: present
+    update_cache: yes
+  loop:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg-agent
+    - software-properties-common
+
+- name: give GPG key
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg #khodam change kardam
+    state: present
+ # environment: "{{ proxy_env }}"
+  ignore_errors: yes #khodam ezafe kardam
+
+
+- name: add docker repo
+  apt_repository:
+    repo: deb https://download.docker.com/linux/debian bookworm stable #khodam change kardam
+    state: present
+ # environment: "{{ proxy_env }}" khodam comment kardam
+
+- name: install docker
+  apt:
+    name: "{{item}}"
+    state: latest
+    update_cache: True
+  loop:
+   - docker-ce
+   - docker-ce-cli
+   - containerd.io
+#  environment: "{{ proxy_env }}" khodam comment kardam
+
+- name: start and enable docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
