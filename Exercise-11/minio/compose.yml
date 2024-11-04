@@ -24,8 +24,9 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_SERVER_URL: https://${MINIO_SUB2}.${DOMAIN_ADDRESS}
-      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_SUB1}.${DOMAIN_ADDRESS}
+      #in 2 line dalil eijad error unable to login due to network error boodand.
+  #    MINIO_SERVER_URL: https://${MINIO_SUB2}.${DOMAIN_ADDRESS}
+  #    MINIO_BROWSER_REDIRECT_URL: https://${MINIO_SUB1}.${DOMAIN_ADDRESS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
