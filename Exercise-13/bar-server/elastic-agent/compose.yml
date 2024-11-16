@@ -1,0 +1,26 @@
+version: '3.8'
+
+networks:
+  app_net:
+    external: true
+    name: app_net
+
+# volumes:
+#   elasticsearch_data:
+#     name: /var/run/docker.sock
+
+services:
+  elastic-agent:
+    image: elastic/elastic-agent:${ELK_VERSION}
+    restart: ${RESTART_POLICY}
+    container_name: elastic-agent
+    hostname: "${HOSTNAME}.${DOMAIN_NAME}"
+    user: root
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      FLEET_ENROLLMENT_TOKEN: "${FLEET_ENROLLMENT_TOKEN}"
+      FLEET_ENROLL: 1
+      FLEET_URL: "${FLEET_URL}"
+    networks:
+      - app_net
