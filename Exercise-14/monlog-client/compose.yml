@@ -1,0 +1,108 @@
+version: '3.8'
+
+networks:
+  app_net:
+    external: true
+    name: app_net
+  web_net:
+    external: true
+    name: web_net
+
+volumes:
+  grafana_data:
+    name: grafana_data
+  prometheus_data:
+    name: prometheus_data
+  alertmanager_data:
+    name: alertmanager_data
+  pushgateway_data:
+    name: pushgateway_data
+
+services:
+  cadvisor:
+    image: docker.io/ahmadrafiee/cadvisor
+    command: --disable_metrics=disk,udp,percpu
+    restart: ${RESTART_POLICY}
+    hostname: '${HOSTNAME}'
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - web_net
+      - app_net
+    ports:
+      - "8080:8080"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web_net
+      - traefik.http.routers.cadvisor.entrypoints=http
+      - traefik.http.routers.cadvisor.rule=Host(`${CONTAINER_SUB_DOMAIN}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.cadvisor.middlewares=https-redirect
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.cadvisor-secure.entrypoints=https
+      - traefik.http.routers.cadvisor-secure.rule=Host(`${CONTAINER_SUB_DOMAIN}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.cadvisor-secure.tls=true
+      - traefik.http.routers.cadvisor-secure.tls.options=default
+      - traefik.http.routers.cadvisor-secure.middlewares=web-auth
+      - traefik.http.routers.cadvisor-secure.tls.certresolver=mycert
+   #   - traefik.http.services.node-exporter.loadbalancer.server.port=9090
+      - traefik.http.services.cadvisor.loadbalancer.server.port=8080
+
+
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    restart: ${RESTART_POLICY}
+    hostname: '${HOSTNAME}'
+    container_name: node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    networks:
+      - web_net
+      - app_net
+    # ports:
+    #   - "9090:9090"
+    ports:
+      - "9100:9100"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web_net
+      - traefik.http.routers.node-exporter.entrypoints=http
+      - traefik.http.routers.node-exporter.rule=Host(`${NODE_SUB_DOMAIN}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.node-exporter.middlewares=https-redirect
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.node-exporter-secure.entrypoints=https
+      - traefik.http.routers.node-exporter-secure.rule=Host(`${NODE_SUB_DOMAIN}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.node-exporter-secure.tls=true
+      - traefik.http.routers.node-exporter-secure.tls.options=default
+      - traefik.http.routers.node-exporter-secure.middlewares=web-auth
+      - traefik.http.routers.node-exporter-secure.tls.certresolver=mycert
+   #   - traefik.http.services.node-exporter.loadbalancer.server.port=9090
+      - traefik.http.services.node-exporter.loadbalancer.server.port=9100
+
+  promtail:
+    image: grafana/promtail:k171-b5eaae1
+    restart: ${RESTART_POLICY}
+    hostname: promtail-${HOSTNAME}
+    container_name: promtail-${HOSTNAME}
+    volumes:
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail:/etc/promtail/
+    command: -config.file=/etc/promtail/promtail.yml
+    networks:
+      - app_net
