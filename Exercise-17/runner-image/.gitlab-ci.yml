@@ -1,0 +1,53 @@
+stages:
+    - build
+
+default:
+    #  image: hello-world
+    image: docker:dind
+    before_script:
+     #    - docker login -u $CI_REGISTRY_USER --password $CI_JOB_TOKEN $CI_REGISTRY
+         - docker login -u $CI_REGISTRY_USER --password $CI_JOB_TOKEN 172.16.20.152:5100
+       #  - docker login -u $CI_REGISTRY_USER --password $CI_JOB_TOKEN http://172.16.20.152:5100
+            
+variables:
+    #DOCKER_AUTH_CONFIG: '{ "auths": { "https://index.docker.io/v1/": { "auth": "$DOCKER_AUTH" } }}'
+    IMAGE_PATH: 172.16.20.152:5100/devops/runner-image
+   # IMAGE_PATH: 172.16.20.152:80/devops/runner-image
+build-mc-image:
+    stage: build
+    script:
+      #  - echo "Compiling the code..."
+        # - echo "Compile complete."    
+        - cd mc-image
+        - docker build -t ${IMAGE_PATH}/mc-image:mc .
+        - docker push ${IMAGE_PATH}/mc-image:mc
+    # only:
+    #     changes:
+    #         - dind-image/*
+build-dind-image:
+    stage: build
+    script:
+        - cd dind-image
+        - docker build -t ${IMAGE_PATH}/dind-image:dind .
+        - docker push ${IMAGE_PATH}/dind-image:dind
+
+build-trivy-image:
+    stage: build
+    script:
+        - cd trivy-image
+        - docker build -t ${IMAGE_PATH}/trivy-image:trivy .
+        - docker push ${IMAGE_PATH}/trivy-image:trivy
+
+build-ssh-image:
+    stage: build
+    script:
+        - cd ssh-image
+        - docker build -t ${IMAGE_PATH}/ssh-image:ssh .
+        - docker push ${IMAGE_PATH}/ssh-image:ssh
+
+build-utils-image:
+    stage: build
+    script:
+        - cd utils-image
+        - docker build -t ${IMAGE_PATH}/utils-image:utils .
+        - docker push ${IMAGE_PATH}/utils-image:utils
