@@ -70,6 +70,19 @@ services:
           'bantime' => 3600
         }
 
+        # gitlab exporter enable
+        gitlab_exporter['enable'] = true
+        gitlab_exporter['listen_address'] = '0.0.0.0'
+        gitlab_exporter['listen_port'] = '9168'
+
+        # gitlab redis exporter enable
+        redis_exporter['listen_address'] = '0.0.0.0:9121'
+        redis_exporter['enable'] = true
+
+        # postgres exporter enable
+        postgres_exporter['enable'] = true
+        postgres_exporter['listen_address'] = '0.0.0.0:9187'
+
         # gitlab backup config
         gitlab_rails['manage_backup_path'] = true
         gitlab_rails['backup_path'] = "/var/opt/gitlab/backups"
@@ -117,17 +130,60 @@ services:
       - traefik.http.routers.gitlab-secure.tls.certresolver=mycert
       - traefik.http.services.gitlab.loadbalancer.server.port=80
       # gitlab registry config
-      # - traefik.http.routers.gitlab-registry.entrypoints=http
-      # - traefik.http.routers.gitlab-registry.rule=Host(`${RIGISTRY_SUB}.${DOMAIN_ADDRESS}`)
-      # - traefik.http.routers.gitlab-registry.middlewares=https-redirect
-      # - traefik.http.routers.gitlab-registry.service=gitlab-registry
-      # - traefik.http.routers.gitlab-registry-secure.service=gitlab-registry
-      # - traefik.http.routers.gitlab-registry-secure.entrypoints=https
-      # - traefik.http.routers.gitlab-registry-secure.rule=Host(`${RIGISTRY_SUB}.${DOMAIN_ADDRESS}`)
-      # - traefik.http.routers.gitlab-registry-secure.tls=true
-      # - traefik.http.routers.gitlab-registry-secure.tls.options=default
-      # - traefik.http.routers.gitlab-registry-secure.tls.certresolver=mycert
-      # - traefik.http.services.gitlab-registry.loadbalancer.server.port=5100
+      - traefik.http.routers.gitlab-registry.entrypoints=http
+      - traefik.http.routers.gitlab-registry.rule=Host(`${RIGISTRY_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-registry.middlewares=https-redirect
+      - traefik.http.routers.gitlab-registry.service=gitlab-registry
+      - traefik.http.routers.gitlab-registry-secure.service=gitlab-registry
+      - traefik.http.routers.gitlab-registry-secure.entrypoints=https
+      - traefik.http.routers.gitlab-registry-secure.rule=Host(`${RIGISTRY_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-registry-secure.tls=true
+      - traefik.http.routers.gitlab-registry-secure.tls.options=default
+      - traefik.http.routers.gitlab-registry-secure.tls.certresolver=mycert
+      - traefik.http.services.gitlab-registry.loadbalancer.server.port=5100
+      # gitlab exporter config
+      - traefik.enable=true
+      - traefik.docker.network=web_net
+      - traefik.http.routers.gitlab-exporter.entrypoints=http
+      - traefik.http.routers.gitlab-exporter.rule=Host(`${GIT_EXPORTER_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-exporter.middlewares=https-redirect
+      - traefik.http.routers.gitlab-registry.service=gitlab-exporter
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.gitlab-exporter-secure.entrypoints=https
+      - traefik.http.routers.gitlab-exporter-secure.rule=Host(`${GIT_EXPORTER_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-exporter-secure.tls=true
+      - traefik.http.routers.gitlab-exporter-secure.tls.options=default
+      - traefik.http.routers.gitlab-exporter-secure.middlewares=web-auth
+      - traefik.http.routers.gitlab-exporter-secure.tls.certresolver=mycert
+      - traefik.http.services.gitlab-exporter.loadbalancer.server.port=9168
+      # gitlab redis exporter config
+      - traefik.enable=true
+      - traefik.docker.network=web_net
+      - traefik.http.routers.gitlab-exporter-redis.entrypoints=http
+      - traefik.http.routers.gitlab-exporter-redis.rule=Host(`${REDIS_EXPORTER_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-exporter-redis.middlewares=https-redirect
+      - traefik.http.routers.gitlab-registry.service=gitlab-exporter-redis
+      - traefik.http.routers.gitlab-exporter-redis-secure.entrypoints=https
+      - traefik.http.routers.gitlab-exporter-redis-secure.rule=Host(`${REDIS_EXPORTER_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-exporter-redis-secure.tls=true
+      - traefik.http.routers.gitlab-exporter-redis-secure.tls.options=default
+      - traefik.http.routers.gitlab-exporter-redis-secure.middlewares=web-auth
+      - traefik.http.routers.gitlab-exporter-redis-secure.tls.certresolver=mycert
+      - traefik.http.services.gitlab-exporter-redis.loadbalancer.server.port=9121
+      # gitlab postgres exporter config
+      - traefik.enable=true
+      - traefik.docker.network=web_net
+      - traefik.http.routers.gitlab-postgressql.entrypoints=http
+      - traefik.http.routers.gitlab-exporter-postgressql.rule=Host(`${PSG_EXPORTER_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-exporter-postgressql.middlewares=https-redirect
+      - traefik.http.routers.gitlab-registry.service=gitlab-exporter-postgressql
+      - traefik.http.routers.gitlab-exporter-postgressql-secure.entrypoints=https
+      - traefik.http.routers.gitlab-exporter-postgressql-secure.rule=Host(`${PSG_EXPORTER_SUB}.${DOMAIN_ADDRESS}`)
+      - traefik.http.routers.gitlab-exporter-postgressql-secure.tls=true
+      - traefik.http.routers.gitlab-exporter-postgressql-secure.tls.options=default
+      - traefik.http.routers.gitlab-exporter-postgressql-secure.middlewares=web-auth
+      - traefik.http.routers.gitlab-exporter-postgressql-secure.tls.certresolver=mycert
+      - traefik.http.services.gitlab-exporter-postgressql.loadbalancer.server.port=9187
     volumes:
       - gitlab_backup:/var/opt/gitlab/backups
       - gitlab_data:/var/opt/gitlab
@@ -137,5 +193,8 @@ services:
       - "22:22"
       - "80:80"
       - "5100:5100"
+      - "9168:9168"
+      - "9121:9121"
+      - "9187:9187"
     networks:
       - web_net
