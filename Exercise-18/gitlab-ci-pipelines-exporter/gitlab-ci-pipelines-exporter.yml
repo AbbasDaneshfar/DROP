@@ -1,6 +1,6 @@
-gitlab:
-  url: http://172.16.20.152/
-  token: glpat-69isepk8Z_XZMrg3c4F6
+# gitlab:
+#   url: http://172.16.20.152/
+#   token: glpat-69isepk8Z_XZMrg3c4F6
 
 wildcards:
   - owner:
